@@ -3,30 +3,43 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 import numpy as np
 
+# 1. (Johan) Läs in och förbered data
 file_path = 'processed_data_befolkningsförändringar.csv'  # Ange sökvägen till filen
-data = pd.read_csv(file_path) # Läs in filen
-data.sort_values(by='år', ascending=True, inplace=True) # Sortera värdena efter år
-#(fayaz)
-data['procentuell_ökning'] = data['folkmängd'].pct_change() * 100 # Räkna ut procentuell förändring
-plt.figure(figsize=(10, 6))     # Skapa en figur med storlek 10x6
-plt.fill_between(data['år'], data['procentuell_ökning'], color='skyblue', alpha=0.5, label='Procentuell förändring')    # Fyll i området under linjen
-plt.plot(data['år'], data['procentuell_ökning'], color='blue', linewidth=2, label='Trendlinje')     # Plotta trendlinjen för procentuell förändring
-plt.title('Procentuell förändring av folkmängden per år')   # Sätt titel på grafen och axlarna
+data = pd.read_csv(file_path)  # Läs in filen
+data.sort_values(by='år', ascending=True, inplace=True)  # Sortera värdena efter år
+
+# 2. Beräkningar och analys
+# (fayaz) Beräkna procentuell förändring
+data['procentuell_ökning'] = data['folkmängd'].pct_change() * 100 
+
+# Beräkna födelsetal, dödstal och naturlig befolkningstillväxt
+data['Födelsetal (%)'] = (data['födda'] / data['folkmängd']) * 100
+\data['Dödstal (%)'] = (data['döda'] / data['folkmängd']) * 100
+\data['Naturlig befolkningstillväxt (%)'] = (data['födelseöverskott'] / data['folkmängd']) * 100
+
+print(data[['år', 'Födelsetal (%)', 'Dödstal (%)', 'Naturlig befolkningstillväxt (%)']].head(10))
+
+# 3. Visualiseringar
+# (fayaz) Visualisera procentuell förändring av folkmängden
+plt.figure(figsize=(10, 6))
+plt.fill_between(data['år'], data['procentuell_ökning'], color='skyblue', alpha=0.5, label='Procentuell förändring')
+plt.plot(data['år'], data['procentuell_ökning'], color='blue', linewidth=2, label='Trendlinje')
+plt.title('Procentuell förändring av folkmängden per år')
 plt.xlabel('År')
 plt.ylabel('Procentuell förändring (%)')
-plt.grid(True, linestyle='--', alpha=0.9)   # Visa rutnät med streckad linje
-plt.axhline(0, color='red', linestyle='--', linewidth=0.9, label='Ingen förändring')    # Lägg till en horisontell linje vid y=0 för att visa ingen förändring
+plt.grid(True, linestyle='--', alpha=0.9)
+plt.axhline(0, color='red', linestyle='--', linewidth=0.9, label='Ingen förändring')
 plt.legend()
 plt.xticks(data['år'])
 plt.tight_layout()
 plt.show()
 
-#(Anmol)
-plt.figure(figsize=(12, 6))    # Skapa en figur med storlek 12x6
-bar_width = 0.35    # Bredden på staplarna
-index = range(len(data['år']))  # Skapa en lista med index från 0 till antalet år
-plt.bar(index, data['födda'], bar_width, label='Födda', color='skyblue', edgecolor='black')   # Plotta staplarna för antal födda
-plt.bar([i + bar_width for i in index], data['döda'], bar_width, label='Döda', color='salmon', edgecolor='black')       # Plotta staplarna för antal döda
+# (Anmol) Visualisera relation mellan födda och döda
+plt.figure(figsize=(12, 6))
+bar_width = 0.35
+index = range(len(data['år']))
+plt.bar(index, data['födda'], bar_width, label='Födda', color='skyblue', edgecolor='black')
+plt.bar([i + bar_width for i in index], data['döda'], bar_width, label='Döda', color='salmon', edgecolor='black')
 plt.title('Relation mellan födda och döda per år')
 plt.xlabel('År')
 plt.ylabel('Antal personer')
@@ -36,15 +49,7 @@ plt.grid(axis='y', linestyle='--', alpha=0.6)
 plt.tight_layout()
 plt.show()
 
-#(Johan)
-#Beräknar "Födelsetal (%)".
-data['Födelsetal (%)'] = (data['födda'] / data['folkmängd']) * 100
-#Beräknar "Dödstal (%)".
-data['Dödstal (%)'] = (data['döda'] / data['folkmängd']) * 100
-#Beräknar "Naturlig befolkningstillväxt (%)".
-data['Naturlig befolkningstillväxt (%)'] = (data['födelseöverskott'] / data['folkmängd']) * 100
-print(data[['år', 'Födelsetal (%)', 'Dödstal (%)', 'Naturlig befolkningstillväxt (%)']].head(10))
-#Visualiserar "Befolkningstillväxt: Födelsetal, Dödstal & Naturlig Tillväxt" med en grouped bar chart.
+# (Johan) Visualisera födelsetal, dödstal och naturlig befolkningstillväxt
 fig, ax = plt.subplots(figsize=(10, 6))
 bar_width = 0.25
 index = np.arange(len(data))
@@ -60,17 +65,20 @@ ax.legend()
 plt.xticks(rotation=45)
 plt.show()
 
-#Förbered data för regression
-X = data[['år']]  # Oberoende variabel
-y = data['tillväxttakt']  # Beroende variabel
-#Skapa och träna modellen
+# 4. Regression och framtida prognoser
+# Förbered data för regression
+X = data[['år']]
+y = data['tillväxttakt']
+
+# Skapa och träna modellen
 model = LinearRegression()
 model.fit(X, y)
-#Generera framtida år.
+
+# Generera framtida år och förutsägelser
 future_years = pd.DataFrame({'år': range(data['år'].max() + 1, data['år'].max() + 11)})
-#Gör förutsägelser för framtida tillväxt.
 future_predictions = model.predict(future_years)
-#Visualiserar historiska och förutsagda värden med en line chart.
+
+# Visualisera förutsägelser av befolkningstillväxt
 plt.figure(figsize=(10, 6))
 plt.plot(data['år'], data['tillväxttakt'], color='blue', marker="o", label='Historiska data')
 plt.plot(data['år'], model.predict(X), color='green', label='Trend')
@@ -84,15 +92,15 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-#(Viktoria)
-plt.figure(figsize=(10, 6))    # Skapa en figur med storlek 10x6
-plt.plot(data['år'], data['invandringar'], label='Invandring', marker='o')  # Plotta linjen för invandring
-plt.plot(data['år'], data['utvandringar'], label='Utvandring', marker='o')  # Plotta linjen för utvandring
+# (Viktoria) Visualisera invandring och utvandring
+plt.figure(figsize=(10, 6))
+plt.plot(data['år'], data['invandringar'], label='Invandring', marker='o')
+plt.plot(data['år'], data['utvandringar'], label='Utvandring', marker='o')
 plt.title('Invandring vs Utvandring per år', fontsize=16)
 plt.xlabel('År', fontsize=12)
 plt.ylabel('Antal personer', fontsize=12)
-plt.xticks(data['år'])  # Visa alla år på x-axeln
-plt.legend()    # Visa en förklaring över linjerna
-plt.grid(True)  # Visa rutnät
-plt.tight_layout()  # Justera layouten
+plt.xticks(data['år'])
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
 plt.show()
